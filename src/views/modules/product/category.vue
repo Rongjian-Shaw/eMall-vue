@@ -1,5 +1,11 @@
 <template>
   <div>
+    <el-switch
+      v-model="draggable"
+      active-text="Dragable"
+      inactive-text="Undraggable"
+    >
+    </el-switch>
     <el-tree
       :data="menus"
       :props="defaultProps"
@@ -7,7 +13,7 @@
       show-checkbox
       node-key="catId"
       :default-expanded-keys="expandedKey"
-      draggable
+      :draggable="draggable"
       :allow-drop="allowDrop"
       @node-drop="handleDrop"
     >
@@ -69,6 +75,7 @@ export default {
   props: {},
   data () {
     return {
+      draggable: false,
       title: '',
       dialogType: '',
       category: { name: '', parentCid: 0, catLevel: 0, showStatus: 1, sort: 0, icon: '', productUnit: '' },
@@ -256,6 +263,20 @@ export default {
         }
       }
       console.log('updateNodes: ', this.updateNodes)
+
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update/sort'),
+        method: 'post',
+        data: this.$http.adornData(this.updateNodes, false)
+      }).then(({ data }) => {
+        this.$message({
+          message: 'Menu updated',
+          type: 'success'
+        })
+        this.getMenus()
+        this.expandedKey = [pCid]
+        this.updateNodes = []
+      })
     },
 
     updateChildNodeLevel (node) {
