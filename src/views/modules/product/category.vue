@@ -8,6 +8,8 @@
       node-key="catId"
       :default-expanded-keys="expandedKey"
       draggable
+      :allow-drop="allowDrop"
+      @node-drop="handleDrop"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -73,6 +75,7 @@ export default {
       dialogVisible: false,
       menus: [],
       expandedKey: [],
+      updateNodes: [],
       defaultProps: {
         children: 'children',
         label: 'name'
@@ -155,9 +158,6 @@ export default {
         this.category.sort = data.category.sort
         this.category.showStatus = data.category.showStatus
       })
-
-      // this.category.name = data.name
-      // this.catId = data.catId
     },
 
     editCategory () {
@@ -206,6 +206,64 @@ export default {
 
       })
       console.log('remove: ', node, data)
+    },
+
+    allowDrop (draggingNode, dropNode, type) {
+      // current node tree's depth
+      var draggingNodeTreeDepth = 0
+      var calDepth = (curLevel, node) => {
+        if (curLevel > draggingNodeTreeDepth) { draggingNodeTreeDepth = curLevel }
+        for (let i = 0; i < node.children.length; i++) {
+          calDepth(curLevel + 1, node.children[i])
+        }
+      }
+      calDepth(1, draggingNode.data)
+      // count the after-conbine total level
+      if (type === 'inner') {
+        return draggingNodeTreeDepth + dropNode.level <= 3
+      } else {
+        return draggingNodeTreeDepth + dropNode.level - 1 <= 3
+      }
+    },
+
+    handleDrop (draggingNode, dropNode, dropType, ev) {
+      console.log('handledrop: ', draggingNode, dropNode, dropType)
+      // parent category id
+      let pCid = 0
+      let siblings = null
+      if (dropType === 'before' || dropType === 'after') {
+        pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
+        siblings = dropNode.parent.childNodes
+      } else {
+        pCid = dropNode.data.catId
+        siblings = dropNode.childNodes
+      }
+
+      // Latest order of dragging node
+      for (let i = 0; i < siblings.length; i++) {
+        // found dragging node
+        if (siblings[i].data.catId === draggingNode.data.catId) {
+          let catLevel = draggingNode.level
+          // level changed
+          if (siblings[i].level !== draggingNode.level) {
+            catLevel = siblings[i].level
+            // update child nodes
+            this.updateChildNodeLevel(siblings[i])
+          }
+          this.updateNodes.push({ catId: siblings[i].data.catId, sort: i, parentCid: pCid, catLevel: catLevel })
+        } else {
+          this.updateNodes.push({ catId: siblings[i].data.catId, sort: i })
+        }
+      }
+      console.log('updateNodes: ', this.updateNodes)
+    },
+
+    updateChildNodeLevel (node) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        let curNode = node.childNodes[i].data
+        this.updateNodes.push({ catId: curNode.catId, catLevel: node.childNodes[i].level })
+        this.updateChildNodeLevel(node.childNodes[i])
+      }
     }
 
   },
