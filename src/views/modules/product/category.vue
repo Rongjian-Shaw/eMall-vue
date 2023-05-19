@@ -6,6 +6,8 @@
       inactive-text="Undraggable"
     >
     </el-switch>
+    <el-button v-if="draggable" @click="batchSave">Save</el-button>
+    <el-button @click="batchDelete" type="danger">Delete</el-button>
     <el-tree
       :data="menus"
       :props="defaultProps"
@@ -16,6 +18,7 @@
       :draggable="draggable"
       :allow-drop="allowDrop"
       @node-drop="handleDrop"
+      ref="menuTree"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -263,7 +266,17 @@ export default {
         }
       }
       console.log('updateNodes: ', this.updateNodes)
+    },
 
+    updateChildNodeLevel (node) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        let curNode = node.childNodes[i].data
+        this.updateNodes.push({ catId: curNode.catId, catLevel: node.childNodes[i].level })
+        this.updateChildNodeLevel(node.childNodes[i])
+      }
+    },
+
+    batchSave () {
       this.$http({
         url: this.$http.adornUrl('/product/category/update/sort'),
         method: 'post',
@@ -274,17 +287,36 @@ export default {
           type: 'success'
         })
         this.getMenus()
-        this.expandedKey = [pCid]
+        // this.expandedKey = [pCid]
         this.updateNodes = []
       })
     },
 
-    updateChildNodeLevel (node) {
-      for (let i = 0; i < node.childNodes.length; i++) {
-        let curNode = node.childNodes[i].data
-        this.updateNodes.push({ catId: curNode.catId, catLevel: node.childNodes[i].level })
-        this.updateChildNodeLevel(node.childNodes[i])
+    batchDelete () {
+      let catIds = []
+      let checkedNodes = this.$refs.menuTree.getCheckedNodes()
+      for (let i = 0; i < checkedNodes.length; i++) {
+        catIds.push(checkedNodes[i].catId)
       }
+      this.$confirm(`Do you want to delete ${catIds} menu?`, 'Warning', {
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        type: 'warning'
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl('/product/category/delete'),
+          method: 'post',
+          data: this.$http.adornData(catIds, false)
+        }).then(({ data }) => {
+          this.$message({
+            message: 'Deleted Successfully',
+            type: 'success'
+          })
+          this.getMenus()
+        }).catch((e) => {
+          this.$message.error('Delete Fail: ', e)
+        })
+      })
     }
 
   },
