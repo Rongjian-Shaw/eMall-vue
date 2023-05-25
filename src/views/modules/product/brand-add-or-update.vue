@@ -38,7 +38,7 @@
         ></el-input>
       </el-form-item>
       <el-form-item label="排序" prop="sort">
-        <el-input v-model="dataForm.sort" placeholder="排序"></el-input>
+        <el-input v-model.number="dataForm.sort" placeholder="排序"></el-input>
       </el-form-item>
     </el-form>
     <span slot="footer" class="dialog-footer">
@@ -60,9 +60,9 @@ export default {
         name: '',
         logo: '',
         descript: '',
-        showStatus: '',
+        showStatus: 1,
         firstLetter: '',
-        sort: ''
+        sort: 0
       },
       dataRule: {
         name: [
@@ -78,10 +78,32 @@ export default {
           { required: true, message: '显示状态[0-不显示；1-显示]不能为空', trigger: 'blur' }
         ],
         firstLetter: [
-          { required: true, message: '检索首字母不能为空', trigger: 'blur' }
+          {
+            validator: (rule, value, callback) => {
+              if (value === '') {
+                callback(new Error('首字母必须填写'))
+              } else if (!/^[a-zA-Z]$/.test(value)) {
+                callback(new Error('首字母需要在a-z,A-Z之间'))
+              } else {
+                callback()
+              }
+            },
+            trigger: 'blur'
+          }
         ],
         sort: [
-          { required: true, message: '排序不能为空', trigger: 'blur' }
+          {
+            validator: (rule, value, callback) => {
+              if (value === '') {
+                callback(new Error('Sort必须填写'))
+              } else if (!Number.isInteger(value) || value < 0) {
+                callback(new Error('value必须是非负整数'))
+              } else {
+                callback()
+              }
+            },
+            trigger: 'blur'
+          }
         ]
       }
     }
