@@ -145,6 +145,7 @@ export default {
   props: {},
   data () {
     return {
+      catId: 0,
       dataForm: {
         key: ''
       },
@@ -163,12 +164,16 @@ export default {
   methods: {
     treeNodeClick (data, node, component) {
       console.log('menu click: ', data.catId)
+      if (node.level === 3) {
+        this.catId = data.catId
+        this.getDataList()
+      }
     },
     // 获取数据列表
     getDataList () {
       this.dataListLoading = true
       this.$http({
-        url: this.$http.adornUrl('/product/attrgroup/list'),
+        url: this.$http.adornUrl(`/product/attrgroup/list/${this.catId}`),
         method: 'get',
         params: this.$http.adornParams({
           'page': this.pageIndex,
