@@ -193,6 +193,7 @@ export default {
           method: "get",
           params: this.$http.adornParams({ page: 1, limit: 10000000 })
         }).then(({ data }) => {
+          console.log('data.page.list: ', data)
           if (data && data.code === 0) {
             this.attrGroups = data.page.list;
           } else {
